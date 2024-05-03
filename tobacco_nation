@@ -1,0 +1,68 @@
+#!/bin/bash
+
+filename=$1
+temp=0
+max=0
+country_code_output=""
+country_output=""
+year_output=""
+gender_output=""
+
+if [ "$filename" != "WHO_tobacco_control_tonly.csv" ]; then
+    echo "The named input file $filename does not exist or has zero length"
+    exit 1
+fi
+
+while IFS=',' read -r region_code region country_code country year gender median_pc pc_range; do
+    
+    if [ "$2" == "$country_code" ] && [ "$3" == "$gender" ]; then
+        max="$median_pc"
+
+        if [ "$(echo "$max > $temp" | bc)" -eq 1 ]; then
+            temp="$max"
+	    country_code_output="$country_code"
+	    country_output="$country"
+	    gender_output="$gender"
+	    year_output="$year"
+        fi
+
+    elif [ "$2" == "$year" ] && [ "$3" == "$gender" ] && [ "$year" -lt 2025 ]; then
+        max="$median_pc"
+
+        if [ "$(echo "$max > $temp" | bc)" -eq 1 ]; then
+            temp="$max"
+            country_code_output="$country_code"
+            country_output="$country"
+            gender_output="$gender"
+	    year_output="$year"
+        fi
+
+    elif [ "$2" == "$year" ] && [ "$3" == "$gender" ] && [ "$year" -gt 2024 ]; then
+        max="$median_pc"
+
+        if [ "$(echo "$max > $temp" | bc)" -eq 1 ]; then
+            temp="$max"
+            country_code_output="$country_code"
+            country_output="$country"
+            gender_output="$gender"
+	    year_output="$year"
+        fi
+
+    fi
+done < "$filename"
+
+if [ "$2" == "$country_code_output" ]; then
+    echo "The global maximum percentage of $gender_output tobacco users for $country_output ($country_code_output) was $temp in $year"
+
+elif [ "$2" == "$year_output" ]; then
+
+    if [ "$year_output" -lt 2025 ]; then
+         echo "The global maximum percentage of $gender_output tobacco users in $year_output was in $country_output ($country_code_output) at $temp"
+
+    elif [ "$year_output" -gt 2024 ]; then
+        echo "The global maximum percentage of $gender_output tobacco users in $year_output is predicted to be in $country_output ($country_code_output) at $temp"
+    fi
+
+else
+    echo "Inserted country code or year can not be found in the database"
+fi
